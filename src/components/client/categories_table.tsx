@@ -326,7 +326,7 @@ export function CategoriesTable(props: { categories: CategoryObject[] }) {
   return (
     <>
       <Table
-        aria-label='Profiles Table'
+        aria-label='Categories Table'
         sortDescriptor={sortDescriptor}
         onSortChange={setSortDescriptor}
         topContent={topContent}
@@ -338,11 +338,7 @@ export function CategoriesTable(props: { categories: CategoryObject[] }) {
             NAME
           </TableColumn>
 
-          <TableColumn
-            key='transaction'
-            allowsSorting>
-            TRANSACTIONS
-          </TableColumn>
+          <TableColumn key='transaction'>TRANSACTIONS</TableColumn>
 
           <TableColumn>ACTIONS</TableColumn>
         </TableHeader>

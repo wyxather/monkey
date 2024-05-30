@@ -215,6 +215,7 @@ function EditFormContent(props: {
           type='text'
           name='description'
           label='Description'
+          isClearable
           placeholder={props.profile.description}
           defaultValue={props.profile.description}
           isDisabled={status.pending}
