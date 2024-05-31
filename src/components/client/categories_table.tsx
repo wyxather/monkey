@@ -34,6 +34,8 @@ import { useFormState, useFormStatus } from "react-dom";
 import { FaPlus, FaSearch } from "react-icons/fa";
 import { FaEllipsisVertical, FaPencil, FaTrash } from "react-icons/fa6";
 import { Balance } from "../balance";
+import { TransactionObject } from "@/models/transaction";
+import { Types } from "mongoose";
 
 function AddFormContent(props: {
   onClose: () => void;
@@ -221,7 +223,10 @@ function EditFormContent(props: {
   );
 }
 
-export function CategoriesTable(props: { categories: CategoryObject[] }) {
+export function CategoriesTable(props: {
+  categories: CategoryObject[];
+  transactions: TransactionObject[];
+}) {
   const [actionCategory, setActionCategory] = useState<CategoryObject | null>(
     null,
   );
@@ -249,6 +254,19 @@ export function CategoriesTable(props: { categories: CategoryObject[] }) {
       message: "",
     }),
   };
+
+  const categoriesBalance = useMemo(() => {
+    const map = new Map<Types.ObjectId, number>();
+    props.categories.forEach((category) => {
+      map.set(category._id!, 0);
+    });
+    props.transactions.forEach((transaction) => {
+      let balance = map.get(transaction.category._id!)!;
+      balance += transaction.balance;
+      map.set(transaction.category._id!, balance);
+    });
+    return map;
+  }, [props.categories, props.transactions]);
 
   const filteredCategories = useMemo(() => {
     let filteredCategories = [...props.categories];
@@ -359,7 +377,7 @@ export function CategoriesTable(props: { categories: CategoryObject[] }) {
               </TableCell>
 
               <TableCell>
-                <Balance balance={0} />
+                <Balance balance={categoriesBalance.get(category._id!)!} />
               </TableCell>
 
               <TableCell>

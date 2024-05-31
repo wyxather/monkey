@@ -2,8 +2,14 @@ import "server-only";
 
 import { getCategories } from "@/actions/categories/action";
 import { CategoriesTable } from "@/components/client/categories_table";
+import { getTransactions } from "@/actions/transactions/action";
 
 export default async function CategoriesPage() {
-  const categories = await getCategories();
-  return <CategoriesTable categories={categories} />;
+  const [categories, transactions] = await Promise.all([
+    getCategories(),
+    getTransactions(),
+  ]);
+  return (
+    <CategoriesTable categories={categories} transactions={transactions} />
+  );
 }

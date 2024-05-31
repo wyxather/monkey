@@ -1,13 +1,13 @@
 "use server";
 
 import { TransactionResult } from "@/actions/transactions/result";
+import Profile, { ProfileDocument } from "@/models/profile";
 import Transaction, { TransactionObject } from "@/models/transaction";
 import { getUserSession } from "@/utilities/server/auth";
 import { Mongoose } from "@/utilities/server/mongoose";
+import { parseZonedDateTime } from "@internationalized/date";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-
-import { parseZonedDateTime } from "@internationalized/date";
 
 export async function getTransactions() {
   let transactions: TransactionObject[] = [];
@@ -78,9 +78,28 @@ export async function addTransaction(
   }
 
   try {
-    await Mongoose.connect();
+    const mongoose = await Mongoose.connect();
     const user = await getUserSession();
-    await Transaction.create({ ...schema.data, user: user?._id });
+    const profile: ProfileDocument | null = await Profile.findOne({
+      _id: schema.data.profile,
+      user: user?._id,
+    });
+
+    if (!profile) {
+      return {
+        result: TransactionResult.Error,
+        message: "Profile associated with this transaction doesn't exist.",
+      };
+    }
+
+    mongoose.connection.transaction(async () => {
+      const transaction = await Transaction.create({
+        ...schema.data,
+        user: user?._id,
+      });
+      profile.balance += transaction.balance;
+      await profile.save();
+    });
   } catch (error: any) {
     return { result: TransactionResult.Error, message: error.message };
   }
@@ -121,9 +140,29 @@ export async function deleteTransaction(
   }
 
   try {
-    await Mongoose.connect();
+    const mongoose = await Mongoose.connect();
     const user = await getUserSession();
-    await Transaction.deleteOne({ ...schema.data, user: user?._id });
+
+    mongoose.connection.transaction(async () => {
+      const transaction = await Transaction.findOneAndDelete({
+        ...schema.data,
+        user: user?._id,
+      }).lean();
+      if (!transaction) {
+        throw Error("Transaction doesn't exist.");
+      }
+
+      const profile = await Profile.findOne({
+        _id: transaction.profile._id,
+        user: user?._id,
+      });
+      if (!profile) {
+        throw Error("Profile associate with this transaction doesn't exist.");
+      }
+
+      profile.balance -= transaction.balance;
+      await profile.save();
+    });
   } catch (error: any) {
     return { result: TransactionResult.Error, message: error.message };
   }
@@ -192,12 +231,61 @@ export async function editTransaction(
   }
 
   try {
-    await Mongoose.connect();
+    const mongoose = await Mongoose.connect();
     const user = await getUserSession();
-    await Transaction.findOneAndUpdate(
-      { _id: schema.data._id, user: user?._id },
-      schema.data,
-    );
+    const transaction = await Transaction.findOne({
+      _id: schema.data._id,
+      user: user?._id,
+    });
+
+    if (!transaction) {
+      return {
+        result: TransactionResult.Error,
+        message: "Transaction doesn't exist.",
+      };
+    }
+
+    const profile = await Profile.findOne({
+      _id: transaction.profile._id,
+      user: user?._id,
+    });
+
+    if (!profile) {
+      return {
+        result: TransactionResult.Error,
+        message: "Profile associate with this transaction doesn't exist.",
+      };
+    }
+
+    if (transaction.profile._id?.toString() === schema.data.profile) {
+      profile.balance += schema.data.balance - transaction.balance;
+
+      mongoose.connection.transaction(async () => {
+        await profile.save();
+        await transaction.updateOne(schema.data);
+      });
+    } else {
+      const newProfile = await Profile.findOne({
+        _id: schema.data.profile,
+        user: user?._id,
+      });
+
+      if (!newProfile) {
+        return {
+          result: TransactionResult.Error,
+          message: "Profile doesn't exist.",
+        };
+      }
+
+      profile.balance -= transaction.balance;
+      newProfile.balance += schema.data.balance;
+
+      mongoose.connection.transaction(async () => {
+        await profile.save();
+        await newProfile.save();
+        await transaction.updateOne(schema.data);
+      });
+    }
   } catch (error: any) {
     return { result: TransactionResult.Error, message: error.message };
   }
