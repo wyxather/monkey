@@ -1,6 +1,6 @@
-import 'server-only'
+import "server-only";
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from "next/server";
 
 export type HttpError =
   | Error
@@ -9,7 +9,7 @@ export type HttpError =
   | ReferenceError
   | SyntaxError
   | TypeError
-  | URIError
+  | URIError;
 
 export enum HttpStatus {
   Ok = 200,
@@ -24,7 +24,7 @@ export class HttpRequest extends NextRequest {}
 
 export class HttpResponse extends NextResponse {
   private static response(body: any, status: HttpStatus) {
-    return NextResponse.json(body, { status })
+    return NextResponse.json(body, { status });
   }
 
   private static responseError(error: HttpError, status: HttpStatus) {
@@ -36,31 +36,31 @@ export class HttpResponse extends NextResponse {
           cause: error.cause,
         },
       },
-      { status }
-    )
+      { status },
+    );
   }
 
   public static ok(body: any) {
-    return this.response(body, HttpStatus.Ok)
+    return this.response(body, HttpStatus.Ok);
   }
 
   public static badRequest(error: HttpError) {
-    return this.responseError(error, HttpStatus.BadRequest)
+    return this.responseError(error, HttpStatus.BadRequest);
   }
 
   public static unauthorized(error: HttpError) {
-    return this.responseError(error, HttpStatus.Unauthorized)
+    return this.responseError(error, HttpStatus.Unauthorized);
   }
 
   public static forbidden(error: HttpError) {
-    return this.responseError(error, HttpStatus.Forbidden)
+    return this.responseError(error, HttpStatus.Forbidden);
   }
 
   public static notFound(error: HttpError) {
-    return this.responseError(error, HttpStatus.NotFound)
+    return this.responseError(error, HttpStatus.NotFound);
   }
 
   public static internalServerError(error: HttpError) {
-    return this.responseError(error, HttpStatus.InternalServerError)
+    return this.responseError(error, HttpStatus.InternalServerError);
   }
 }

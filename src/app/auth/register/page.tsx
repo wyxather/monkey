@@ -1,7 +1,7 @@
-import 'server-only'
+import "server-only";
 
-import { RegisterForm } from '@/components/client/register_form'
+import { RegisterForm } from "@/components/client/register_form";
 
 export default async function RegisterPage() {
-  return <RegisterForm />
+  return <RegisterForm />;
 }

@@ -1,42 +1,38 @@
-import 'server-only'
+import "server-only";
 
-import '@/styles/globals.css'
+import "@/styles/globals.css";
 
-import { Providers } from '@/components/client/providers'
-import { Navbar } from '@/components/server/navbar'
-import { Metadata, Viewport } from 'next'
+import { Providers } from "@/components/client/providers";
+import { Navbar } from "@/components/server/navbar";
+import { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
-  title: 'monkey',
-  description: 'expense tracker',
-}
+  title: "monkey",
+  description: "expense tracker",
+};
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: 'white' },
-    { media: '(prefers-color-scheme: dark)', color: 'black' },
+    { media: "(prefers-color-scheme: light)", color: "white" },
+    { media: "(prefers-color-scheme: dark)", color: "black" },
   ],
-}
+};
 
 export default async function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <html
-      suppressHydrationWarning
-      lang='en'>
+    <html suppressHydrationWarning lang="en">
       <head />
       <body>
-        <Providers
-          attribute='class'
-          defaultTheme='light'>
+        <Providers attribute="class" defaultTheme="light">
           <Navbar />
           <main>{children}</main>
           <footer />
         </Providers>
       </body>
     </html>
-  )
+  );
 }

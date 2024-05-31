@@ -41,81 +41,82 @@ function RegisterFormContent(props: {
 
   return (
     <>
-      <div className='flex flex-col gap-4 p-4'>
-        <Input
+    <div className= 'flex flex-col gap-4 p-4' >
+    <Input
           type='text'
-          name='username'
-          label='Username'
-          minLength={1}
-          maxLength={64}
-          isRequired
-          isDisabled={status.pending}
-        />
+  name = 'username'
+  label = 'Username'
+  minLength = { 1}
+  maxLength = { 64}
+  isRequired
+  isDisabled = { status.pending }
+    />
 
-        <Input
+    <Input
           type='password'
-          name='password1'
-          label='Password'
-          minLength={8}
-          maxLength={64}
-          isRequired
-          isDisabled={status.pending}
-        />
+  name = 'password1'
+  label = 'Password'
+  minLength = { 8}
+  maxLength = { 64}
+  isRequired
+  isDisabled = { status.pending }
+    />
 
-        <Input
+    <Input
           type='password'
-          name='password2'
-          label='Confirm Password'
-          minLength={8}
-          maxLength={64}
-          isRequired
-          isDisabled={status.pending}
-        />
+  name = 'password2'
+  label = 'Confirm Password'
+  minLength = { 8}
+  maxLength = { 64}
+  isRequired
+  isDisabled = { status.pending }
+    />
 
-        <div className='flex justify-end gap-4'>
-          <Link
+    <div className='flex justify-end gap-4' >
+      <Link
             href='/auth/register'
-            underline='always'
-            showAnchorIcon
-            isDisabled={status.pending}>
-            Already have an account? login here
-          </Link>
+  underline = 'always'
+  showAnchorIcon
+  isDisabled = { status.pending } >
+    Already have an account ? login here
+      < /Link>
 
-          <Button
-            type='submit'
-            color='primary'
-            variant={!status.pending ? 'flat' : 'faded'}
-            isLoading={status.pending}>
-            Register
-          </Button>
-        </div>
-      </div>
+      < Button
+  type = 'submit'
+  color = 'primary'
+  variant = {!status.pending ? 'flat' : 'faded'
+}
+isLoading = { status.pending } >
+  Register
+  < /Button>
+  < /div>
+  < /div>
 
-      <Modal
-        placement='center'
-        backdrop='blur'
-        hideCloseButton
-        isDismissable={false}
-        isKeyboardDismissDisabled
-        isOpen={modal.isOpen}
-        onOpenChange={modal.onOpenChange}>
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className='bg-red-500'>Error</ModalHeader>
-              <ModalBody className='mt-6 mb-3'>{props.state.message}</ModalBody>
-              <ModalFooter>
-                <Button
+  < Modal
+placement = 'center'
+backdrop = 'blur'
+hideCloseButton
+isDismissable = { false}
+isKeyboardDismissDisabled
+isOpen = { modal.isOpen }
+onOpenChange = { modal.onOpenChange } >
+  <ModalContent>
+  {(onClose) => (
+    <>
+    <ModalHeader className= 'bg-red-500' > Error < /ModalHeader>
+    < ModalBody className = 'mt-6 mb-3' > { props.state.message } < /ModalBody>
+      < ModalFooter >
+      <Button
                   variant='bordered'
-                  onPress={onClose}>
-                  Ok
-                </Button>
-              </ModalFooter>
-            </>
+onPress = { onClose } >
+  Ok
+  < /Button>
+  < /ModalFooter>
+  < />
           )}
-        </ModalContent>
-      </Modal>
-    </>
+</ModalContent>
+  < /Modal>
+  < />
   )
 }
 
@@ -127,12 +128,13 @@ export function RegisterForm() {
   })
   return (
     <form
-      ref={ref}
-      action={async (data: FormData) => {
-        state[1](data)
-        ref.current?.reset()
-      }}>
-      <RegisterFormContent state={state[0]} />
-    </form>
+      ref= { ref }
+  action = { async(data: FormData) => {
+    state[1](data)
+    ref.current?.reset()
+  }
+}>
+  <RegisterFormContent state={ state[0] } />
+    < /form>
   )
 }

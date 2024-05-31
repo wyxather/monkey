@@ -1,7 +1,7 @@
-import 'server-only'
+import "server-only";
 
-import { LoginForm } from '@/components/client/login_form'
+import { LoginForm } from "@/components/client/login_form";
 
 export default async function LoginPage() {
-  return <LoginForm />
+  return <LoginForm />;
 }

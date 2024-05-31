@@ -6,18 +6,18 @@ import {
   Types,
   model,
   models,
-} from 'mongoose'
+} from "mongoose";
 
 interface Profile {
-  user: Types.ObjectId
-  name: string
-  description: string
-  balance: number
+  user: Types.ObjectId;
+  name: string;
+  description: string;
+  balance: number;
 }
 
 export type ProfileObject = FlattenMaps<Profile> & {
-  _id?: Types.ObjectId
-}
+  _id?: Types.ObjectId;
+};
 
 interface ProfileQuery {}
 
@@ -27,7 +27,7 @@ export type ProfileDocument = HydratedDocument<
   Profile,
   ProfileMethod,
   ProfileQuery
->
+>;
 
 interface ProfileModel extends Model<Profile, ProfileQuery, ProfileMethod> {}
 
@@ -38,13 +38,13 @@ const ProfileSchema = new Schema<
   ProfileQuery
 >(
   {
-    user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    user: { type: Schema.Types.ObjectId, ref: "User", required: true },
     name: { type: Schema.Types.String, required: true },
-    description: { type: Schema.Types.String, default: '' },
+    description: { type: Schema.Types.String, default: "" },
     balance: { type: Schema.Types.Number, required: true },
   },
-  { collection: 'profiles' }
-)
+  { collection: "profiles" },
+);
 
 export default (models.Profile as ProfileModel) ||
-  model<Profile, ProfileModel>('Profile', ProfileSchema)
+  model<Profile, ProfileModel>("Profile", ProfileSchema);
