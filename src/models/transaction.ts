@@ -21,7 +21,7 @@ interface Transaction {
 }
 
 export type TransactionObject = FlattenMaps<Transaction> & {
-  _id?: Types.ObjectId;
+  _id: Types.ObjectId;
 };
 
 interface TransactionQuery {}

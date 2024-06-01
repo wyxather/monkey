@@ -15,7 +15,7 @@ interface User {
 }
 
 export type UserObject = FlattenMaps<User> & {
-  _id?: Types.ObjectId;
+  _id: Types.ObjectId;
 };
 
 interface UserQuery {}
@@ -26,7 +26,7 @@ export type UserDocument = HydratedDocument<User, UserMethod, UserQuery>;
 
 interface UserModel extends Model<User, UserQuery, UserMethod> {
   login(username: string, password: string): Promise<UserObject | null>;
-  register(username: string, password: string): Promise<void>;
+  register(username: string, password: string): Promise<boolean>;
 }
 
 const UserSchema = new Schema<User, UserModel, UserMethod, UserQuery>(
@@ -37,22 +37,34 @@ const UserSchema = new Schema<User, UserModel, UserMethod, UserQuery>(
   { collection: "users" },
 );
 
-UserSchema.statics.login = async function (username: string, password: string) {
-  const user = await this.findOne({ username }).lean();
-  return user && bcrypt.compareSync(password, user.password) ? user : null;
+UserSchema.statics.login = async function (
+  username: string,
+  password: string,
+): Promise<UserObject | null> {
+  let user: UserObject | null;
+  try {
+    user = await this.findOne({ username }).lean();
+  } catch (error) {
+    return null;
+  }
+  if (!user || !bcrypt.compareSync(password, user.password)) {
+    return null;
+  }
+  return user;
 };
 
 UserSchema.statics.register = async function (
   username: string,
   password: string,
-) {
+): Promise<boolean> {
   if (await this.findOne({ username }).lean()) {
-    throw Error("Username already exist.");
+    return false;
   }
   await this.create({
     username,
     password: bcrypt.hashSync(password, bcrypt.genSaltSync(10)),
   });
+  return true;
 };
 
 export default (models.User as UserModel) ||

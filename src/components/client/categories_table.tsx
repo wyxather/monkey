@@ -5,8 +5,10 @@ import {
   deleteCategory,
   editCategory,
 } from "@/actions/categories/action";
-import { CategoryResult } from "@/actions/categories/result";
+import { ActionResult, ActionState } from "@/actions/types";
+import { Balance } from "@/components/balance";
 import { CategoryObject } from "@/models/category";
+import { TransactionObject } from "@/models/transaction";
 import {
   Button,
   Dropdown,
@@ -29,64 +31,55 @@ import {
   User,
   useDisclosure,
 } from "@nextui-org/react";
+import { Types } from "mongoose";
 import { useEffect, useMemo, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { FaPlus, FaSearch } from "react-icons/fa";
 import { FaEllipsisVertical, FaPencil, FaTrash } from "react-icons/fa6";
-import { Balance } from "../balance";
-import { TransactionObject } from "@/models/transaction";
-import { Types } from "mongoose";
 
-function AddFormContent(props: {
-  onClose: () => void;
-  state: { result: CategoryResult; message: string };
-}) {
+function AddFormContent(props: { state: ActionState; onClose: () => void }) {
   const status = useFormStatus();
 
   useEffect(() => {
-    switch (props.state.result) {
-      case CategoryResult.Ok: {
-        props.state.result = CategoryResult.Undefined;
-        props.onClose();
-        break;
-      }
-      case CategoryResult.Error: {
-        props.state.result = CategoryResult.Undefined;
-        break;
-      }
+    if (props.state.error === null) {
+      props.onClose();
     }
-  });
+  }, [props.state.error]);
 
   return (
     <>
       <ModalHeader className="bg-blue-500">Add Category</ModalHeader>
+
       <ModalBody className="mt-6 mb-3">
         <Input
+          isDisabled={status.pending}
+          isRequired
           type="text"
           name="name"
           label="Name"
           minLength={1}
           maxLength={64}
-          isDisabled={status.pending}
-          isRequired
         />
       </ModalBody>
+
       <ModalFooter>
-        {props.state.result !== CategoryResult.Undefined && (
-          <span className="text-danger text-xs">{props.state.message}</span>
-        )}
+        <span className="text-danger text-xs">
+          {props.state.error?.message}
+        </span>
+
         <Button
-          variant="ghost"
           isDisabled={status.pending}
+          variant="ghost"
           onPress={props.onClose}
         >
           Cancel
         </Button>
+
         <Button
+          isLoading={status.pending}
           type="submit"
           variant={status.pending ? "faded" : "ghost"}
           color="primary"
-          isLoading={status.pending}
         >
           Create
         </Button>
@@ -95,59 +88,66 @@ function AddFormContent(props: {
   );
 }
 
+function AddForm(props: { onClose: () => void }) {
+  const [state, action] = useFormState(addCategory, ActionResult.state());
+  return (
+    <form action={action}>
+      <AddFormContent state={state} onClose={props.onClose} />
+    </form>
+  );
+}
+
 function DeleteFormContent(props: {
-  onClose: () => void;
-  state: { result: CategoryResult; message: string };
+  state: ActionState;
   category: CategoryObject;
+  onClose: () => void;
 }) {
   const status = useFormStatus();
 
   useEffect(() => {
-    switch (props.state.result) {
-      case CategoryResult.Ok: {
-        props.state.result = CategoryResult.Undefined;
-        props.onClose();
-        break;
-      }
-      case CategoryResult.Error: {
-        props.state.result = CategoryResult.Undefined;
-        break;
-      }
+    if (props.state.error === null) {
+      props.onClose();
     }
-  });
+  }, [props.state.error]);
 
   return (
     <>
       <ModalHeader className="bg-red-500">Delete Category</ModalHeader>
+
       <ModalBody className="mt-6 mb-3">
         <input
-          name="_id"
           readOnly
           hidden
-          value={props.category._id?.toString()}
+          name="_id"
+          value={props.category._id.toString()}
         />
+
         <p>Are you sure you want to delete {props.category.name}?</p>
+
         <p className="text-xs">
           (Every transactions associate with {props.category.name} will also be
           deleted)
         </p>
       </ModalBody>
+
       <ModalFooter>
-        {props.state.result !== CategoryResult.Undefined && (
-          <span className="text-danger text-xs">{props.state.message}</span>
-        )}
+        <span className="text-danger text-xs">
+          {props.state.error?.message}
+        </span>
+
         <Button
-          variant="ghost"
           isDisabled={status.pending}
+          variant="ghost"
           onPress={props.onClose}
         >
           Cancel
         </Button>
+
         <Button
+          isLoading={status.pending}
           type="submit"
           variant={status.pending ? "faded" : "ghost"}
           color="danger"
-          isLoading={status.pending}
         >
           Delete
         </Button>
@@ -156,38 +156,47 @@ function DeleteFormContent(props: {
   );
 }
 
+function DeleteForm(props: { category: CategoryObject; onClose: () => void }) {
+  const [state, action] = useFormState(deleteCategory, ActionResult.state());
+  return (
+    <form action={action}>
+      <DeleteFormContent
+        state={state}
+        category={props.category}
+        onClose={props.onClose}
+      />
+    </form>
+  );
+}
+
 function EditFormContent(props: {
-  onClose: () => void;
-  state: { result: CategoryResult; message: string };
+  state: ActionState;
   category: CategoryObject;
+  onClose: () => void;
 }) {
   const status = useFormStatus();
 
   useEffect(() => {
-    switch (props.state.result) {
-      case CategoryResult.Ok: {
-        props.state.result = CategoryResult.Undefined;
-        props.onClose();
-        break;
-      }
-      case CategoryResult.Error: {
-        props.state.result = CategoryResult.Undefined;
-        break;
-      }
+    if (props.state.error === null) {
+      props.onClose();
     }
-  });
+  }, [props.state.error]);
 
   return (
     <>
       <ModalHeader className="bg-gray-500">Edit Category</ModalHeader>
+
       <ModalBody className="mt-6 mb-3">
         <input
-          name="_id"
           readOnly
           hidden
-          value={props.category._id?.toString()}
+          name="_id"
+          value={props.category._id.toString()}
         />
+
         <Input
+          isDisabled={status.pending}
+          isRequired
           type="text"
           name="name"
           label="Name"
@@ -195,26 +204,27 @@ function EditFormContent(props: {
           defaultValue={props.category.name}
           minLength={1}
           maxLength={64}
-          isDisabled={status.pending}
-          isRequired
         />
       </ModalBody>
+
       <ModalFooter>
-        {props.state.result !== CategoryResult.Undefined && (
-          <span className="text-danger text-xs">{props.state.message}</span>
-        )}
+        <span className="text-danger text-xs">
+          {props.state.error?.message}
+        </span>
+
         <Button
-          variant="ghost"
           isDisabled={status.pending}
+          variant="ghost"
           onPress={props.onClose}
         >
           Cancel
         </Button>
+
         <Button
+          isLoading={status.pending}
           type="submit"
           variant={status.pending ? "faded" : "ghost"}
           color="warning"
-          isLoading={status.pending}
         >
           Edit
         </Button>
@@ -223,47 +233,47 @@ function EditFormContent(props: {
   );
 }
 
+function EditForm(props: { category: CategoryObject; onClose: () => void }) {
+  const [state, action] = useFormState(editCategory, ActionResult.state());
+  return (
+    <form action={action}>
+      <EditFormContent
+        state={state}
+        category={props.category}
+        onClose={props.onClose}
+      />
+    </form>
+  );
+}
+
 export function CategoriesTable(props: {
   categories: CategoryObject[];
   transactions: TransactionObject[];
 }) {
-  const [actionCategory, setActionCategory] = useState<CategoryObject | null>(
-    null,
-  );
+  const [actionCategory, setActionCategory] = useState(props.categories.at(0));
   const [filterValue, setFilterValue] = useState("");
   const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
     column: "name",
-    direction: "ascending",
+    direction: "descending",
   });
+
   const modal = {
     add: useDisclosure(),
     delete: useDisclosure(),
     edit: useDisclosure(),
   };
-  const form = {
-    add: useFormState(addCategory, {
-      result: CategoryResult.Undefined,
-      message: "",
-    }),
-    delete: useFormState(deleteCategory, {
-      result: CategoryResult.Undefined,
-      message: "",
-    }),
-    edit: useFormState(editCategory, {
-      result: CategoryResult.Undefined,
-      message: "",
-    }),
-  };
 
   const categoriesBalance = useMemo(() => {
     const map = new Map<Types.ObjectId, number>();
     props.categories.forEach((category) => {
-      map.set(category._id!, 0);
+      map.set(category._id, 0);
     });
     props.transactions.forEach((transaction) => {
-      let balance = map.get(transaction.category._id!)!;
-      balance += transaction.balance;
-      map.set(transaction.category._id!, balance);
+      let balance = map.get(transaction.category._id);
+      if (balance !== undefined) {
+        balance += transaction.balance;
+        map.set(transaction.category._id, balance);
+      }
     });
     return map;
   }, [props.categories, props.transactions]);
@@ -271,25 +281,39 @@ export function CategoriesTable(props: {
   const filteredCategories = useMemo(() => {
     let filteredCategories = [...props.categories];
     if (filterValue) {
-      filteredCategories = filteredCategories.filter((categories) =>
-        categories.name.toLowerCase().includes(filterValue.toLowerCase()),
+      const filterValueLowerCase = filterValue.toLowerCase();
+      filteredCategories = filteredCategories.filter(
+        (category) =>
+          (category.name.toLowerCase().includes(filterValueLowerCase) ||
+            categoriesBalance.get(category._id)) ??
+          "0".toString().includes(filterValueLowerCase),
       );
     }
     return filteredCategories;
-  }, [props.categories, filterValue]);
+  }, [props.categories, filterValue, categoriesBalance]);
 
   const sortedCategories = useMemo(() => {
     return [...filteredCategories].sort((a, b) => {
-      const first = a[
-        sortDescriptor.column as keyof typeof a
-      ] as unknown as number;
-      const second = b[
-        sortDescriptor.column as keyof typeof b
-      ] as unknown as number;
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
+      let first: number;
+      let second: number;
+      switch (sortDescriptor.column) {
+        case "name": {
+          first = a.name as unknown as number;
+          second = b.name as unknown as number;
+          break;
+        }
+        case "transactions": {
+          first = categoriesBalance.get(a._id) ?? 0;
+          second = categoriesBalance.get(b._id) ?? 0;
+          break;
+        }
+        default:
+          return 0;
+      }
+      const cmp = first > second ? -1 : first < second ? 1 : 0;
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
-  }, [sortDescriptor, filteredCategories]);
+  }, [sortDescriptor, filteredCategories, categoriesBalance]);
 
   const topContent = useMemo(() => {
     return (
@@ -298,12 +322,13 @@ export function CategoriesTable(props: {
           <Input
             isClearable
             className="w-full sm:max-w-[44%]"
-            placeholder="Search categories..."
             startContent={<FaSearch />}
             value={filterValue}
+            placeholder="Search categories..."
             onClear={() => setFilterValue("")}
             onValueChange={setFilterValue}
           />
+
           <div className="flex gap-3">
             <Button
               color="primary"
@@ -314,6 +339,7 @@ export function CategoriesTable(props: {
             </Button>
           </div>
         </div>
+
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
             {props.categories.length > 0 ? (
@@ -353,16 +379,18 @@ export function CategoriesTable(props: {
       <Table
         aria-label="Categories Table"
         sortDescriptor={sortDescriptor}
-        onSortChange={setSortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
+        onSortChange={setSortDescriptor}
       >
         <TableHeader>
           <TableColumn key="name" allowsSorting>
             NAME
           </TableColumn>
 
-          <TableColumn key="transaction">TRANSACTIONS</TableColumn>
+          <TableColumn key="transactions" allowsSorting>
+            TRANSACTIONS
+          </TableColumn>
 
           <TableColumn>ACTIONS</TableColumn>
         </TableHeader>
@@ -371,13 +399,13 @@ export function CategoriesTable(props: {
           emptyContent={"No category to display"}
         >
           {(category) => (
-            <TableRow key={category._id?.toString()}>
+            <TableRow key={category._id.toString()}>
               <TableCell>
                 <User name={category.name} avatarProps={{ radius: "lg" }} />
               </TableCell>
 
               <TableCell>
-                <Balance balance={categoriesBalance.get(category._id!)!} />
+                <Balance balance={categoriesBalance.get(category._id) ?? 0} />
               </TableCell>
 
               <TableCell>
@@ -425,60 +453,44 @@ export function CategoriesTable(props: {
       </Table>
 
       <Modal
-        backdrop="blur"
+        isOpen={modal.add.isOpen}
         isDismissable={false}
         isKeyboardDismissDisabled
-        isOpen={modal.add.isOpen}
         hideCloseButton
+        backdrop="blur"
         onOpenChange={modal.add.onOpenChange}
       >
         <ModalContent>
-          {(onClose) => (
-            <form action={form.add[1]}>
-              <AddFormContent onClose={onClose} state={form.add[0]} />
-            </form>
-          )}
+          {(onClose) => <AddForm onClose={onClose} />}
         </ModalContent>
       </Modal>
 
       <Modal
-        backdrop="blur"
+        isOpen={modal.delete.isOpen}
         isDismissable={false}
         isKeyboardDismissDisabled
-        isOpen={modal.delete.isOpen}
         hideCloseButton
+        backdrop="blur"
         onOpenChange={modal.delete.onOpenChange}
       >
         <ModalContent>
           {(onClose) => (
-            <form action={form.delete[1]}>
-              <DeleteFormContent
-                onClose={onClose}
-                state={form.delete[0]}
-                category={actionCategory!}
-              />
-            </form>
+            <DeleteForm category={actionCategory!} onClose={onClose} />
           )}
         </ModalContent>
       </Modal>
 
       <Modal
-        backdrop="blur"
+        isOpen={modal.edit.isOpen}
         isDismissable={false}
         isKeyboardDismissDisabled
-        isOpen={modal.edit.isOpen}
         hideCloseButton
+        backdrop="blur"
         onOpenChange={modal.edit.onOpenChange}
       >
         <ModalContent>
           {(onClose) => (
-            <form action={form.edit[1]}>
-              <EditFormContent
-                onClose={onClose}
-                state={form.edit[0]}
-                category={actionCategory!}
-              />
-            </form>
+            <EditForm category={actionCategory!} onClose={onClose} />
           )}
         </ModalContent>
       </Modal>

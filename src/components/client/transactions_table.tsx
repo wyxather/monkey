@@ -5,7 +5,8 @@ import {
   deleteTransaction,
   editTransaction,
 } from "@/actions/transactions/action";
-import { TransactionResult } from "@/actions/transactions/result";
+import { ActionResult, ActionState } from "@/actions/types";
+import { Balance } from "@/components/balance";
 import { CategoryObject } from "@/models/category";
 import { ProfileObject } from "@/models/profile";
 import { TransactionObject } from "@/models/transaction";
@@ -41,28 +42,27 @@ import { useEffect, useMemo, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { FaPlus, FaSearch } from "react-icons/fa";
 import { FaEllipsisVertical, FaPencil, FaTrash } from "react-icons/fa6";
-import { Balance } from "../balance";
 
 function AddFormContent(props: {
+  state: ActionState;
   profiles: ProfileObject[];
   categories: CategoryObject[];
   onClose: () => void;
-  state: { result: TransactionResult; message: string };
 }) {
   const status = useFormStatus();
 
   const [selectedProfileId, setSelectedProfileId] = useState<Set<string>>(
-    new Set([props.profiles[0]._id?.toString() ?? ""]),
+    new Set([props.profiles.at(0)?._id.toString() ?? ""]),
   );
   const [selectedCategoryId, setSelectedCategoryId] = useState<Set<string>>(
-    new Set([props.categories[0]._id?.toString() ?? ""]),
+    new Set([props.categories.at(0)?._id.toString() ?? ""]),
   );
 
   const selectedProfile = useMemo(
     () =>
       props.profiles.find(
         (profile) =>
-          profile._id?.toString() === Array.from(selectedProfileId)[0],
+          profile._id.toString() === Array.from(selectedProfileId)[0],
       ),
     [props.profiles, selectedProfileId],
   );
@@ -70,24 +70,16 @@ function AddFormContent(props: {
     () =>
       props.categories.find(
         (category) =>
-          category._id?.toString() === Array.from(selectedCategoryId)[0],
+          category._id.toString() === Array.from(selectedCategoryId)[0],
       ),
     [props.categories, selectedCategoryId],
   );
 
   useEffect(() => {
-    switch (props.state.result) {
-      case TransactionResult.Ok: {
-        props.state.result = TransactionResult.Undefined;
-        props.onClose();
-        break;
-      }
-      case TransactionResult.Error: {
-        props.state.result = TransactionResult.Undefined;
-        break;
-      }
+    if (props.state.error === null) {
+      props.onClose();
     }
-  });
+  }, [props.state.error]);
 
   return (
     <>
@@ -96,7 +88,7 @@ function AddFormContent(props: {
       <ModalBody className="mt-6 mb-3">
         <div className="flex">
           <div className="text-sm flex-grow flex items-center">Profile</div>
-          <Dropdown shouldBlockScroll isDisabled={status.pending}>
+          <Dropdown isDisabled={status.pending} shouldBlockScroll>
             <DropdownTrigger>
               <User
                 as="button"
@@ -104,9 +96,11 @@ function AddFormContent(props: {
                 description={selectedProfile?.description}
               />
             </DropdownTrigger>
+
             <DropdownMenu
-              aria-label="Profile Selection Menu"
               disallowEmptySelection
+              className="overflow-y-scroll max-h-96"
+              aria-label="Profile Selection Menu"
               selectionMode="single"
               selectedKeys={selectedProfileId}
               onSelectionChange={
@@ -115,9 +109,9 @@ function AddFormContent(props: {
             >
               {props.profiles.map((profile) => (
                 <DropdownItem
+                  key={profile._id.toString()}
                   variant="flat"
                   textValue={profile.name}
-                  key={profile._id?.toString()}
                 >
                   <User name={profile.name} description={profile.description} />
                 </DropdownItem>
@@ -128,13 +122,14 @@ function AddFormContent(props: {
 
         <div className="flex">
           <div className="text-sm flex-grow flex items-center">Category</div>
-          <Dropdown shouldBlockScroll isDisabled={status.pending}>
+          <Dropdown isDisabled={status.pending} shouldBlockScroll>
             <DropdownTrigger>
               <User as="button" name={selectedCategory?.name} />
             </DropdownTrigger>
             <DropdownMenu
-              aria-label="Category Selection Menu"
               disallowEmptySelection
+              className="overflow-y-scroll max-h-96"
+              aria-label="Category Selection Menu"
               selectionMode="single"
               selectedKeys={selectedCategoryId}
               onSelectionChange={
@@ -143,9 +138,9 @@ function AddFormContent(props: {
             >
               {props.categories.map((category) => (
                 <DropdownItem
+                  key={category._id.toString()}
                   variant="flat"
                   textValue={category.name}
-                  key={category._id?.toString()}
                 >
                   <User name={category.name} />
                 </DropdownItem>
@@ -155,27 +150,29 @@ function AddFormContent(props: {
         </div>
 
         <input
-          name="profile"
-          value={selectedProfile?._id?.toString()}
           readOnly
           hidden
+          name="profile"
+          value={selectedProfile?._id.toString()}
         />
 
         <input
-          name="category"
-          value={selectedCategory?._id?.toString()}
           readOnly
           hidden
+          name="category"
+          value={selectedCategory?._id.toString()}
         />
 
         <Input
+          isDisabled={status.pending}
           type="text"
           name="description"
           label="Description"
-          isDisabled={status.pending}
         />
 
         <Input
+          isDisabled={status.pending}
+          isRequired
           type="number"
           name="balance"
           label="Balance"
@@ -185,37 +182,37 @@ function AddFormContent(props: {
               <span className="text-default-400 text-small">Rp</span>
             </div>
           }
-          isRequired
-          isDisabled={status.pending}
         />
 
         <DatePicker
-          name="date"
-          label="Date"
           isDisabled={status.pending}
           isRequired
           showMonthAndYearPickers
+          name="date"
+          label="Date"
           placeholderValue={now(getLocalTimeZone())}
           defaultValue={now(getLocalTimeZone())}
         />
       </ModalBody>
 
       <ModalFooter>
-        {props.state.result !== TransactionResult.Undefined && (
-          <span className="text-danger text-xs">{props.state.message}</span>
-        )}
+        <span className="text-danger text-xs">
+          {props.state.error?.message}
+        </span>
+
         <Button
-          variant="ghost"
           isDisabled={status.pending}
+          variant="ghost"
           onPress={props.onClose}
         >
           Cancel
         </Button>
+
         <Button
+          isLoading={status.pending}
           type="submit"
           variant={status.pending ? "faded" : "ghost"}
           color="primary"
-          isLoading={status.pending}
         >
           Create
         </Button>
@@ -224,63 +221,79 @@ function AddFormContent(props: {
   );
 }
 
-function DeleteFormContent(props: {
+function AddForm(props: {
+  profiles: ProfileObject[];
+  categories: CategoryObject[];
   onClose: () => void;
-  state: { result: TransactionResult; message: string };
+}) {
+  const [state, action] = useFormState(addTransaction, ActionResult.state());
+  return (
+    <form action={action}>
+      <AddFormContent
+        state={state}
+        profiles={props.profiles}
+        categories={props.categories}
+        onClose={props.onClose}
+      />
+    </form>
+  );
+}
+
+function DeleteFormContent(props: {
+  state: ActionState;
   transaction: TransactionObject;
+  onClose: () => void;
 }) {
   const status = useFormStatus();
 
   useEffect(() => {
-    switch (props.state.result) {
-      case TransactionResult.Ok: {
-        props.state.result = TransactionResult.Undefined;
-        props.onClose();
-        break;
-      }
-      case TransactionResult.Error: {
-        props.state.result = TransactionResult.Undefined;
-        break;
-      }
+    if (props.state.error === null) {
+      props.onClose();
     }
   });
 
   return (
     <>
       <ModalHeader className="bg-red-500">Delete Transaction</ModalHeader>
+
       <ModalBody className="mt-6 mb-3">
         <input
-          name="_id"
           readOnly
           hidden
+          name="_id"
           value={props.transaction._id?.toString()}
         />
+
         <p>
           Are you sure you want to delete{" "}
           {(props.transaction.category as CategoryObject).name} transaction?
         </p>
+
         <p className="text-xs">
           (Profile associate with this instance of{" "}
           {(props.transaction.category as CategoryObject).name} transaction will
           also be undone)
         </p>
       </ModalBody>
+
       <ModalFooter>
-        {props.state.result !== TransactionResult.Undefined && (
-          <span className="text-danger text-xs">{props.state.message}</span>
-        )}
+        <span className="text-danger text-xs">
+          {props.state.error?.message}
+        </span>
+
         <Button
-          variant="ghost"
           isDisabled={status.pending}
+          variant="ghost"
           onPress={props.onClose}
         >
           Cancel
         </Button>
+
         <Button
+          isLoading={status.pending}
           type="submit"
           variant={status.pending ? "faded" : "ghost"}
           color="danger"
-          isLoading={status.pending}
         >
           Delete
         </Button>
@@ -289,27 +302,43 @@ function DeleteFormContent(props: {
   );
 }
 
-function EditFormContent(props: {
+function DeleteForm(props: {
+  transaction: TransactionObject;
   onClose: () => void;
-  state: { result: TransactionResult; message: string };
+}) {
+  const [state, action] = useFormState(deleteTransaction, ActionResult.state());
+  return (
+    <form action={action}>
+      <DeleteFormContent
+        state={state}
+        transaction={props.transaction}
+        onClose={props.onClose}
+      />
+    </form>
+  );
+}
+
+function EditFormContent(props: {
+  state: ActionState;
   transaction: TransactionObject;
   profiles: ProfileObject[];
   categories: CategoryObject[];
+  onClose: () => void;
 }) {
   const status = useFormStatus();
 
   const [selectedProfileId, setSelectedProfileId] = useState<Set<string>>(
-    new Set([props.transaction.profile._id?.toString() ?? ""]),
+    new Set([props.transaction.profile._id.toString()]),
   );
   const [selectedCategoryId, setSelectedCategoryId] = useState<Set<string>>(
-    new Set([props.transaction.category._id?.toString() ?? ""]),
+    new Set([props.transaction.category._id.toString()]),
   );
 
   const selectedProfile = useMemo(
     () =>
       props.profiles.find(
         (profile) =>
-          profile._id?.toString() === Array.from(selectedProfileId)[0],
+          profile._id.toString() === Array.from(selectedProfileId)[0],
       ),
     [props.profiles, selectedProfileId],
   );
@@ -317,24 +346,16 @@ function EditFormContent(props: {
     () =>
       props.categories.find(
         (category) =>
-          category._id?.toString() === Array.from(selectedCategoryId)[0],
+          category._id.toString() === Array.from(selectedCategoryId)[0],
       ),
     [props.categories, selectedCategoryId],
   );
 
   useEffect(() => {
-    switch (props.state.result) {
-      case TransactionResult.Ok: {
-        props.state.result = TransactionResult.Undefined;
-        props.onClose();
-        break;
-      }
-      case TransactionResult.Error: {
-        props.state.result = TransactionResult.Undefined;
-        break;
-      }
+    if (props.state.error === null) {
+      props.onClose();
     }
-  });
+  }, [props.state.error]);
 
   return (
     <>
@@ -342,15 +363,15 @@ function EditFormContent(props: {
 
       <ModalBody className="mt-6 mb-3">
         <input
-          name="_id"
           readOnly
           hidden
-          value={props.transaction._id?.toString()}
+          name="_id"
+          value={props.transaction._id.toString()}
         />
 
         <div className="flex">
           <div className="text-sm flex-grow flex items-center">Profile</div>
-          <Dropdown shouldBlockScroll isDisabled={status.pending}>
+          <Dropdown isDisabled={status.pending} shouldBlockScroll>
             <DropdownTrigger>
               <User
                 as="button"
@@ -358,9 +379,10 @@ function EditFormContent(props: {
                 description={selectedProfile?.description}
               />
             </DropdownTrigger>
+
             <DropdownMenu
-              aria-label="Profile Selection Menu"
               disallowEmptySelection
+              aria-label="Profile Selection Menu"
               selectionMode="single"
               selectedKeys={selectedProfileId}
               onSelectionChange={
@@ -369,9 +391,9 @@ function EditFormContent(props: {
             >
               {props.profiles.map((profile) => (
                 <DropdownItem
-                  textValue={profile.name}
+                  key={profile._id.toString()}
                   variant="flat"
-                  key={profile._id?.toString()}
+                  textValue={profile.name}
                 >
                   <User name={profile.name} description={profile.description} />
                 </DropdownItem>
@@ -379,15 +401,18 @@ function EditFormContent(props: {
             </DropdownMenu>
           </Dropdown>
         </div>
+
         <div className="flex">
           <div className="text-sm flex-grow flex items-center">Category</div>
-          <Dropdown shouldBlockScroll isDisabled={status.pending}>
+          <Dropdown isDisabled={status.pending} shouldBlockScroll>
             <DropdownTrigger>
               <User as="button" name={selectedCategory?.name} />
             </DropdownTrigger>
+
             <DropdownMenu
-              aria-label="Category Selection Menu"
               disallowEmptySelection
+              aria-label="Category Selection Menu"
+              className="overflow-y-scroll max-h-96"
               selectionMode="single"
               selectedKeys={selectedCategoryId}
               onSelectionChange={
@@ -396,9 +421,9 @@ function EditFormContent(props: {
             >
               {props.categories.map((category) => (
                 <DropdownItem
+                  key={category._id.toString()}
                   variant="flat"
                   textValue={category.name}
-                  key={category._id?.toString()}
                 >
                   <User name={category.name} />
                 </DropdownItem>
@@ -406,28 +431,34 @@ function EditFormContent(props: {
             </DropdownMenu>
           </Dropdown>
         </div>
+
         <input
+          readOnly
+          hidden
           name="profile"
-          value={selectedProfile?._id?.toString()}
-          readOnly
-          hidden
+          value={selectedProfile?._id.toString()}
         />
+
         <input
-          name="category"
-          value={selectedCategory?._id?.toString()}
           readOnly
           hidden
+          name="category"
+          value={selectedCategory?._id.toString()}
         />
+
         <Input
+          isDisabled={status.pending}
+          isClearable
           type="text"
           name="description"
           label="Description"
-          isClearable
           placeholder={props.transaction.description}
           defaultValue={props.transaction.description}
-          isDisabled={status.pending}
         />
+
         <Input
+          isDisabled={status.pending}
+          isRequired
           type="number"
           name="balance"
           label="Balance"
@@ -438,36 +469,37 @@ function EditFormContent(props: {
               <span className="text-default-400 text-small">Rp</span>
             </div>
           }
-          isRequired
-          isDisabled={status.pending}
         />
+
         <DatePicker
-          name="date"
-          label="Date"
           isDisabled={status.pending}
           isRequired
           showMonthAndYearPickers
+          name="date"
+          label="Date"
           placeholderValue={parseZonedDateTime(props.transaction.date)}
           defaultValue={parseZonedDateTime(props.transaction.date)}
         />
       </ModalBody>
 
       <ModalFooter>
-        {props.state.result !== TransactionResult.Undefined && (
-          <span className="text-danger text-xs">{props.state.message}</span>
-        )}
+        <span className="text-danger text-xs">
+          {props.state.error?.message}
+        </span>
+
         <Button
-          variant="ghost"
           isDisabled={status.pending}
+          variant="ghost"
           onPress={props.onClose}
         >
           Cancel
         </Button>
+
         <Button
+          isLoading={status.pending}
           type="submit"
           variant={status.pending ? "faded" : "ghost"}
           color="warning"
-          isLoading={status.pending}
         >
           Edit
         </Button>
@@ -476,36 +508,44 @@ function EditFormContent(props: {
   );
 }
 
+function EditForm(props: {
+  transaction: TransactionObject;
+  profiles: ProfileObject[];
+  categories: CategoryObject[];
+  onClose: () => void;
+}) {
+  const [state, action] = useFormState(editTransaction, ActionResult.state());
+  return (
+    <form action={action}>
+      <EditFormContent
+        state={state}
+        transaction={props.transaction}
+        profiles={props.profiles}
+        categories={props.categories}
+        onClose={props.onClose}
+      />
+    </form>
+  );
+}
+
 export function TransactionsTable(props: {
   profiles: ProfileObject[];
   categories: CategoryObject[];
   transactions: TransactionObject[];
 }) {
-  const [actionTransaction, setActionTransaction] =
-    useState<TransactionObject | null>(null);
+  const [actionTransaction, setActionTransaction] = useState(
+    props.transactions.at(0),
+  );
   const [filterValue, setFilterValue] = useState("");
   const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
     column: "date",
     direction: "descending",
   });
+
   const modal = {
     add: useDisclosure(),
     delete: useDisclosure(),
     edit: useDisclosure(),
-  };
-  const form = {
-    add: useFormState(addTransaction, {
-      result: TransactionResult.Undefined,
-      message: "",
-    }),
-    delete: useFormState(deleteTransaction, {
-      result: TransactionResult.Undefined,
-      message: "",
-    }),
-    edit: useFormState(editTransaction, {
-      result: TransactionResult.Undefined,
-      message: "",
-    }),
   };
 
   const filteredTransactions = useMemo(() => {
@@ -543,8 +583,6 @@ export function TransactionsTable(props: {
       let second: number;
       switch (sortDescriptor.column) {
         case "profile": {
-          if (sortDescriptor.direction === "ascending") {
-          }
           first = (a.profile as ProfileObject).name as unknown as number;
           second = (b.profile as ProfileObject).name as unknown as number;
           break;
@@ -564,11 +602,10 @@ export function TransactionsTable(props: {
           second = parseZonedDateTime(b.date) as unknown as number;
           break;
         }
-        default: {
+        default:
           return 0;
-        }
       }
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
+      const cmp = first > second ? -1 : first < second ? 1 : 0;
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
   }, [sortDescriptor, filteredTransactions]);
@@ -580,9 +617,9 @@ export function TransactionsTable(props: {
           <Input
             isClearable
             className="w-full sm:max-w-[44%]"
-            placeholder="Search transactions..."
             startContent={<FaSearch />}
             value={filterValue}
+            placeholder="Search transactions..."
             onClear={() => setFilterValue("")}
             onValueChange={setFilterValue}
           />
@@ -596,19 +633,20 @@ export function TransactionsTable(props: {
             </Button>
           </div>
         </div>
+
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
             {props.transactions.length > 0 ? (
               <>
                 Total {props.transactions.length} transaction
-                {props.transactions.length > 1 && <>s</>}.
+                {props.transactions.length > 1 && "s"}.
                 {filterValue && (
                   <>
                     {filteredTransactions.length > 0 ? (
                       <>
                         {" "}
                         Found {filteredTransactions.length} transaction
-                        {filteredTransactions.length > 1 && <>s</>}.
+                        {filteredTransactions.length > 1 && "s"}.
                       </>
                     ) : (
                       " No transaction found."
@@ -635,9 +673,9 @@ export function TransactionsTable(props: {
       <Table
         aria-label="Transactions Table"
         sortDescriptor={sortDescriptor}
-        onSortChange={setSortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
+        onSortChange={setSortDescriptor}
       >
         <TableHeader>
           <TableColumn key="profile" allowsSorting>
@@ -663,7 +701,7 @@ export function TransactionsTable(props: {
           emptyContent={"No transaction to display"}
         >
           {(transaction) => (
-            <TableRow key={transaction._id?.toString()}>
+            <TableRow key={transaction._id.toString()}>
               <TableCell>
                 <User
                   name={(transaction.profile as ProfileObject).name}
@@ -735,67 +773,55 @@ export function TransactionsTable(props: {
       </Table>
 
       <Modal
-        backdrop="blur"
+        isOpen={modal.add.isOpen}
         isDismissable={false}
         isKeyboardDismissDisabled
-        isOpen={modal.add.isOpen}
         hideCloseButton
+        backdrop="blur"
         onOpenChange={modal.add.onOpenChange}
       >
         <ModalContent>
           {(onClose) => (
-            <form action={form.add[1]}>
-              <AddFormContent
-                profiles={props.profiles}
-                categories={props.categories}
-                onClose={onClose}
-                state={form.add[0]}
-              />
-            </form>
+            <AddForm
+              profiles={props.profiles}
+              categories={props.categories}
+              onClose={onClose}
+            />
           )}
         </ModalContent>
       </Modal>
 
       <Modal
-        backdrop="blur"
+        isOpen={modal.delete.isOpen}
         isDismissable={false}
         isKeyboardDismissDisabled
-        isOpen={modal.delete.isOpen}
         hideCloseButton
+        backdrop="blur"
         onOpenChange={modal.delete.onOpenChange}
       >
         <ModalContent>
           {(onClose) => (
-            <form action={form.delete[1]}>
-              <DeleteFormContent
-                onClose={onClose}
-                state={form.delete[0]}
-                transaction={actionTransaction!}
-              />
-            </form>
+            <DeleteForm transaction={actionTransaction!} onClose={onClose} />
           )}
         </ModalContent>
       </Modal>
 
       <Modal
-        backdrop="blur"
+        isOpen={modal.edit.isOpen}
         isDismissable={false}
         isKeyboardDismissDisabled
-        isOpen={modal.edit.isOpen}
         hideCloseButton
+        backdrop="blur"
         onOpenChange={modal.edit.onOpenChange}
       >
         <ModalContent>
           {(onClose) => (
-            <form action={form.edit[1]}>
-              <EditFormContent
-                onClose={onClose}
-                state={form.edit[0]}
-                transaction={actionTransaction!}
-                profiles={props.profiles}
-                categories={props.categories}
-              />
-            </form>
+            <EditForm
+              transaction={actionTransaction!}
+              profiles={props.profiles}
+              categories={props.categories}
+              onClose={onClose}
+            />
           )}
         </ModalContent>
       </Modal>

@@ -5,7 +5,8 @@ import {
   deleteProfile,
   editProfile,
 } from "@/actions/profiles/action";
-import { ProfileResult } from "@/actions/profiles/result";
+import { ActionResult, ActionState } from "@/actions/types";
+import { Balance } from "@/components/balance";
 import { ProfileObject } from "@/models/profile";
 import {
   Button,
@@ -33,48 +34,42 @@ import { useEffect, useMemo, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { FaPlus, FaSearch } from "react-icons/fa";
 import { FaEllipsisVertical, FaPencil, FaTrash } from "react-icons/fa6";
-import { Balance } from "../balance";
 
-function AddFormContent(props: {
-  onClose: () => void;
-  state: { result: ProfileResult; message: string };
-}) {
+function AddFormContent(props: { state: ActionState; onClose: () => void }) {
   const status = useFormStatus();
 
   useEffect(() => {
-    switch (props.state.result) {
-      case ProfileResult.Ok: {
-        props.state.result = ProfileResult.Undefined;
-        props.onClose();
-        break;
-      }
-      case ProfileResult.Error: {
-        props.state.result = ProfileResult.Undefined;
-        break;
-      }
+    if (props.state.error === null) {
+      props.onClose();
     }
-  });
+  }, [props.state.error]);
 
   return (
     <>
       <ModalHeader className="bg-blue-500">Add Profile</ModalHeader>
+
       <ModalBody className="mt-6 mb-3">
         <Input
+          isDisabled={status.pending}
+          isRequired
           type="text"
           name="name"
           label="Name"
           minLength={1}
           maxLength={64}
-          isDisabled={status.pending}
-          isRequired
         />
+
         <Input
+          isDisabled={status.pending}
           type="text"
           name="description"
           label="Description"
-          isDisabled={status.pending}
+          maxLength={64}
         />
+
         <Input
+          isDisabled={status.pending}
+          isRequired
           type="number"
           name="balance"
           label="Balance"
@@ -84,26 +79,27 @@ function AddFormContent(props: {
               <span className="text-default-400 text-small">Rp</span>
             </div>
           }
-          isRequired
-          isDisabled={status.pending}
         />
       </ModalBody>
+
       <ModalFooter>
-        {props.state.result !== ProfileResult.Undefined && (
-          <span className="text-danger text-xs">{props.state.message}</span>
-        )}
+        <span className="text-danger text-xs">
+          {props.state.error?.message}
+        </span>
+
         <Button
-          variant="ghost"
           isDisabled={status.pending}
+          variant="ghost"
           onPress={props.onClose}
         >
           Cancel
         </Button>
+
         <Button
-          type="submit"
+          isLoading={status.pending}
           variant={status.pending ? "faded" : "ghost"}
           color="primary"
-          isLoading={status.pending}
+          type="submit"
         >
           Create
         </Button>
@@ -112,59 +108,66 @@ function AddFormContent(props: {
   );
 }
 
+function AddForm(props: { onClose: () => void }) {
+  const [state, action] = useFormState(addProfile, ActionResult.state());
+  return (
+    <form action={action}>
+      <AddFormContent state={state} onClose={props.onClose} />
+    </form>
+  );
+}
+
 function DeleteFormContent(props: {
-  onClose: () => void;
-  state: { result: ProfileResult; message: string };
+  state: ActionState;
   profile: ProfileObject;
+  onClose: () => void;
 }) {
   const status = useFormStatus();
 
   useEffect(() => {
-    switch (props.state.result) {
-      case ProfileResult.Ok: {
-        props.state.result = ProfileResult.Undefined;
-        props.onClose();
-        break;
-      }
-      case ProfileResult.Error: {
-        props.state.result = ProfileResult.Undefined;
-        break;
-      }
+    if (props.state.error === null) {
+      props.onClose();
     }
-  });
+  }, [props.state.error]);
 
   return (
     <>
       <ModalHeader className="bg-red-500">Delete Profile</ModalHeader>
+
       <ModalBody className="mt-6 mb-3">
         <input
-          name="_id"
           readOnly
           hidden
-          value={props.profile._id?.toString()}
+          name="_id"
+          value={props.profile._id.toString()}
         />
+
         <p>Are you sure you want to delete {props.profile.name}?</p>
+
         <p className="text-xs">
           (Every transactions associate with {props.profile.name} will also be
           deleted)
         </p>
       </ModalBody>
+
       <ModalFooter>
-        {props.state.result !== ProfileResult.Undefined && (
-          <span className="text-danger text-xs">{props.state.message}</span>
-        )}
+        <span className="text-danger text-xs">
+          {props.state.error?.message}
+        </span>
+
         <Button
-          variant="ghost"
           isDisabled={status.pending}
+          variant="ghost"
           onPress={props.onClose}
         >
           Cancel
         </Button>
+
         <Button
-          type="submit"
+          isLoading={status.pending}
           variant={status.pending ? "faded" : "ghost"}
           color="danger"
-          isLoading={status.pending}
+          type="submit"
         >
           Delete
         </Button>
@@ -173,38 +176,47 @@ function DeleteFormContent(props: {
   );
 }
 
+function DeleteForm(props: { profile: ProfileObject; onClose: () => void }) {
+  const [state, action] = useFormState(deleteProfile, ActionResult.state());
+  return (
+    <form action={action}>
+      <DeleteFormContent
+        state={state}
+        profile={props.profile}
+        onClose={props.onClose}
+      />
+    </form>
+  );
+}
+
 function EditFormContent(props: {
-  onClose: () => void;
-  state: { result: ProfileResult; message: string };
+  state: ActionState;
   profile: ProfileObject;
+  onClose: () => void;
 }) {
   const status = useFormStatus();
 
   useEffect(() => {
-    switch (props.state.result) {
-      case ProfileResult.Ok: {
-        props.state.result = ProfileResult.Undefined;
-        props.onClose();
-        break;
-      }
-      case ProfileResult.Error: {
-        props.state.result = ProfileResult.Undefined;
-        break;
-      }
+    if (props.state.error === null) {
+      props.onClose();
     }
-  });
+  }, [props.state.error]);
 
   return (
     <>
       <ModalHeader className="bg-gray-500">Edit Profile</ModalHeader>
+
       <ModalBody className="mt-6 mb-3">
         <input
-          name="_id"
           readOnly
           hidden
-          value={props.profile._id?.toString()}
+          name="_id"
+          value={props.profile._id.toString()}
         />
+
         <Input
+          isDisabled={status.pending}
+          isRequired
           type="text"
           name="name"
           label="Name"
@@ -212,19 +224,22 @@ function EditFormContent(props: {
           defaultValue={props.profile.name}
           minLength={1}
           maxLength={64}
-          isDisabled={status.pending}
-          isRequired
         />
+
         <Input
+          isDisabled={status.pending}
+          isClearable
           type="text"
           name="description"
           label="Description"
-          isClearable
           placeholder={props.profile.description}
           defaultValue={props.profile.description}
-          isDisabled={status.pending}
+          maxLength={64}
         />
+
         <Input
+          isDisabled={status.pending}
+          isRequired
           type="number"
           name="balance"
           label="Balance"
@@ -235,26 +250,27 @@ function EditFormContent(props: {
               <span className="text-default-400 text-small">Rp</span>
             </div>
           }
-          isRequired
-          isDisabled={status.pending}
         />
       </ModalBody>
+
       <ModalFooter>
-        {props.state.result !== ProfileResult.Undefined && (
-          <span className="text-danger text-xs">{props.state.message}</span>
-        )}
+        <span className="text-danger text-xs">
+          {props.state.error?.message}
+        </span>
+
         <Button
-          variant="ghost"
           isDisabled={status.pending}
+          variant="ghost"
           onPress={props.onClose}
         >
           Cancel
         </Button>
+
         <Button
-          type="submit"
+          isLoading={status.pending}
           variant={status.pending ? "faded" : "ghost"}
           color="warning"
-          isLoading={status.pending}
+          type="submit"
         >
           Edit
         </Button>
@@ -263,40 +279,42 @@ function EditFormContent(props: {
   );
 }
 
-export function ProfilesTable(props: { profiles: ProfileObject[] }) {
-  const [actionProfile, setActionProfile] = useState<ProfileObject | null>(
-    null,
+function EditForm(props: { profile: ProfileObject; onClose: () => void }) {
+  const [state, action] = useFormState(editProfile, ActionResult.state());
+  return (
+    <form action={action}>
+      <EditFormContent
+        state={state}
+        profile={props.profile}
+        onClose={props.onClose}
+      />
+    </form>
   );
+}
+
+export function ProfilesTable(props: { profiles: ProfileObject[] }) {
+  const [actionProfile, setActionProfile] = useState(props.profiles.at(0));
   const [filterValue, setFilterValue] = useState("");
   const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
     column: "profile",
-    direction: "ascending",
+    direction: "descending",
   });
+
   const modal = {
     add: useDisclosure(),
     delete: useDisclosure(),
     edit: useDisclosure(),
   };
-  const form = {
-    add: useFormState(addProfile, {
-      result: ProfileResult.Undefined,
-      message: "",
-    }),
-    delete: useFormState(deleteProfile, {
-      result: ProfileResult.Undefined,
-      message: "",
-    }),
-    edit: useFormState(editProfile, {
-      result: ProfileResult.Undefined,
-      message: "",
-    }),
-  };
 
   const filteredProfiles = useMemo(() => {
     let filteredProfiles = [...props.profiles];
     if (filterValue) {
-      filteredProfiles = filteredProfiles.filter((profiles) =>
-        profiles.name.toLowerCase().includes(filterValue.toLowerCase()),
+      const filterValueLowerCase = filterValue.toLowerCase();
+      filteredProfiles = filteredProfiles.filter(
+        (profile) =>
+          profile.name.toLowerCase().includes(filterValueLowerCase) ||
+          profile.description.toLowerCase().includes(filterValueLowerCase) ||
+          profile.balance.toString().includes(filterValueLowerCase),
       );
     }
     return filteredProfiles;
@@ -304,9 +322,24 @@ export function ProfilesTable(props: { profiles: ProfileObject[] }) {
 
   const sortedProfiles = useMemo(() => {
     return [...filteredProfiles].sort((a, b) => {
-      const first = a[sortDescriptor.column as keyof typeof a] as number;
-      const second = b[sortDescriptor.column as keyof typeof b] as number;
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
+      let first: number;
+      let second: number;
+      switch (sortDescriptor.column) {
+        case "profile": {
+          first = a.name as unknown as number;
+          second = b.name as unknown as number;
+          break;
+        }
+        case "balance": {
+          first = a.balance;
+          second = b.balance;
+          break;
+        }
+        default: {
+          return 0;
+        }
+      }
+      const cmp = first > second ? -1 : first < second ? 1 : 0;
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
   }, [sortDescriptor, filteredProfiles]);
@@ -318,12 +351,13 @@ export function ProfilesTable(props: { profiles: ProfileObject[] }) {
           <Input
             isClearable
             className="w-full sm:max-w-[44%]"
-            placeholder="Search profiles..."
             startContent={<FaSearch />}
             value={filterValue}
+            placeholder="Search profiles..."
             onClear={() => setFilterValue("")}
             onValueChange={setFilterValue}
           />
+
           <div className="flex gap-3">
             <Button
               color="primary"
@@ -334,19 +368,20 @@ export function ProfilesTable(props: { profiles: ProfileObject[] }) {
             </Button>
           </div>
         </div>
+
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
             {props.profiles.length > 0 ? (
               <>
                 Total {props.profiles.length} profile
-                {props.profiles.length > 1 && <>s</>}.
+                {props.profiles.length > 1 && "s"}.
                 {filterValue && (
                   <>
                     {filteredProfiles.length > 0 ? (
                       <>
                         {" "}
                         Found {filteredProfiles.length} profile
-                        {filteredProfiles.length > 1 && <>s</>}.
+                        {filteredProfiles.length > 1 && "s"}.
                       </>
                     ) : (
                       " No profile found."
@@ -373,12 +408,12 @@ export function ProfilesTable(props: { profiles: ProfileObject[] }) {
       <Table
         aria-label="Profiles Table"
         sortDescriptor={sortDescriptor}
-        onSortChange={setSortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
+        onSortChange={setSortDescriptor}
       >
         <TableHeader>
-          <TableColumn key="name" allowsSorting>
+          <TableColumn key="profile" allowsSorting>
             PROFILE
           </TableColumn>
 
@@ -393,7 +428,7 @@ export function ProfilesTable(props: { profiles: ProfileObject[] }) {
           emptyContent={"No profile to display"}
         >
           {(profile) => (
-            <TableRow key={profile._id?.toString()}>
+            <TableRow key={profile._id.toString()}>
               <TableCell>
                 <User
                   name={profile.name}
@@ -409,7 +444,7 @@ export function ProfilesTable(props: { profiles: ProfileObject[] }) {
               <TableCell>
                 <Dropdown backdrop="blur">
                   <DropdownTrigger>
-                    <Button variant="light" isIconOnly>
+                    <Button isIconOnly variant="light">
                       <FaEllipsisVertical />
                     </Button>
                   </DropdownTrigger>
@@ -451,61 +486,43 @@ export function ProfilesTable(props: { profiles: ProfileObject[] }) {
       </Table>
 
       <Modal
-        backdrop="blur"
+        isOpen={modal.add.isOpen}
         isDismissable={false}
         isKeyboardDismissDisabled
-        isOpen={modal.add.isOpen}
         hideCloseButton
+        backdrop="blur"
         onOpenChange={modal.add.onOpenChange}
       >
         <ModalContent>
-          {(onClose) => (
-            <form action={form.add[1]}>
-              <AddFormContent onClose={onClose} state={form.add[0]} />
-            </form>
-          )}
+          {(onClose) => <AddForm onClose={onClose} />}
         </ModalContent>
       </Modal>
 
       <Modal
-        backdrop="blur"
+        isOpen={modal.delete.isOpen}
         isDismissable={false}
         isKeyboardDismissDisabled
-        isOpen={modal.delete.isOpen}
         hideCloseButton
+        backdrop="blur"
         onOpenChange={modal.delete.onOpenChange}
       >
         <ModalContent>
           {(onClose) => (
-            <form action={form.delete[1]}>
-              <DeleteFormContent
-                onClose={onClose}
-                state={form.delete[0]}
-                profile={actionProfile!}
-              />
-            </form>
+            <DeleteForm profile={actionProfile!} onClose={onClose} />
           )}
         </ModalContent>
       </Modal>
 
       <Modal
-        backdrop="blur"
+        isOpen={modal.edit.isOpen}
         isDismissable={false}
         isKeyboardDismissDisabled
-        isOpen={modal.edit.isOpen}
         hideCloseButton
+        backdrop="blur"
         onOpenChange={modal.edit.onOpenChange}
       >
         <ModalContent>
-          {(onClose) => (
-            <form action={form.edit[1]}>
-              <EditFormContent
-                onClose={onClose}
-                state={form.edit[0]}
-                profile={actionProfile!}
-              />
-            </form>
-          )}
+          {(onClose) => <EditForm profile={actionProfile!} onClose={onClose} />}
         </ModalContent>
       </Modal>
     </>

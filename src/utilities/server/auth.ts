@@ -101,14 +101,13 @@ export async function createSession(
   response?: HttpResponse,
 ) {
   const user: UserSession = {
-    _id: userObject._id!,
+    _id: userObject._id,
   };
   const iat = Date.now();
   const exp = iat + EXPIRATION_DURATION;
   return sign({ user }, iat, exp)
     .then((jwt) => encrypt({ jwt }, iat, exp))
-    .then((session) => setSessionCookie(session, exp, response))
-    .catch(() => false);
+    .then((session) => setSessionCookie(session, exp, response));
 }
 
 export async function updateSession(

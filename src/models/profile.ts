@@ -16,7 +16,7 @@ interface Profile {
 }
 
 export type ProfileObject = FlattenMaps<Profile> & {
-  _id?: Types.ObjectId;
+  _id: Types.ObjectId;
 };
 
 interface ProfileQuery {}

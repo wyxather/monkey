@@ -19,7 +19,7 @@ export async function middleware(request: HttpRequest) {
     const user = await getUserSession(session);
     if (user) {
       if (request.nextUrl.pathname.startsWith("/auth/login")) {
-        return HttpResponse.redirect(new URL("/", request.url));
+        return HttpResponse.redirect(new URL("/profiles", request.url));
       }
       const response = HttpResponse.next();
       await updateSession(session, response);

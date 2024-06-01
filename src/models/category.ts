@@ -14,7 +14,7 @@ interface Category {
 }
 
 export type CategoryObject = FlattenMaps<Category> & {
-  _id?: Types.ObjectId;
+  _id: Types.ObjectId;
 };
 
 interface CategoryQuery {}
