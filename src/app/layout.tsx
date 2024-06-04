@@ -2,8 +2,9 @@ import "server-only";
 
 import "@/styles/globals.css";
 
+import { NavigationBar } from "@/components/client/navigation_bar";
 import { Providers } from "@/components/client/providers";
-import { Navbar } from "@/components/server/navbar";
+import { getUserSession } from "@/utilities/server/auth";
 import { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
@@ -23,12 +24,13 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const user = await getUserSession();
   return (
     <html suppressHydrationWarning lang="en">
       <head />
       <body>
         <Providers attribute="class" defaultTheme="dark">
-          <Navbar />
+          {user && <NavigationBar />}
           <main>{children}</main>
           <footer />
         </Providers>
