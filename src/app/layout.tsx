@@ -27,7 +27,7 @@ export default async function RootLayout({
     <html suppressHydrationWarning lang="en">
       <head />
       <body>
-        <Providers attribute="class" defaultTheme="light">
+        <Providers attribute="class" defaultTheme="dark">
           <Navbar />
           <main>{children}</main>
           <footer />
