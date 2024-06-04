@@ -539,7 +539,7 @@ export function TransactionsTable(props: {
   const [filterValue, setFilterValue] = useState("");
   const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
     column: "date",
-    direction: "descending",
+    direction: "ascending",
   });
 
   const modal = {
