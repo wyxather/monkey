@@ -10,7 +10,7 @@ import { HttpRequest, HttpResponse } from "@/utilities/server/http";
 import { NextResponse } from "next/server";
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|auth/register).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
 
 export async function middleware(request: HttpRequest) {
@@ -18,7 +18,10 @@ export async function middleware(request: HttpRequest) {
   if (session) {
     const user = await getUserSession(session);
     if (user) {
-      if (request.nextUrl.pathname.startsWith("/auth/login")) {
+      if (
+        request.nextUrl.pathname.startsWith("/auth/login") ||
+        request.nextUrl.pathname.startsWith("/auth/register")
+      ) {
         return HttpResponse.redirect(new URL("/profiles", request.url));
       }
       const response = HttpResponse.next();
