@@ -1,17 +1,19 @@
 "use client";
 
 import {
-  Button,
   Link,
   Navbar,
   NavbarBrand,
   NavbarContent,
   NavbarItem,
+  NavbarMenu,
+  NavbarMenuItem,
+  NavbarMenuToggle,
   Switch,
 } from "@nextui-org/react";
 import { useTheme } from "next-themes";
 import { usePathname } from "next/navigation";
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useState } from "react";
 import { FaMoon, FaSun } from "react-icons/fa6";
 
 function ThemeSwitcher() {
@@ -28,37 +30,46 @@ function ThemeSwitcher() {
   );
 }
 
-function ButtonLink(props: PropsWithChildren<{ href: string }>) {
+function NavigationLink(props: PropsWithChildren<{ href: string }>) {
   const pathname = usePathname();
   const isActive = pathname === props.href;
   return (
-    <Button
-      as={Link}
-      variant={isActive ? "solid" : "light"}
-      color={isActive ? "primary" : "default"}
+    <Link
+      color={isActive ? "primary" : "foreground"}
       href={props.href}
+      className="sm:w-fit w-full justify-center"
     >
       {props.children}
-    </Button>
+    </Link>
   );
 }
 
 export function NavigationBar() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   return (
-    <Navbar>
-      <NavbarBrand>
-        <p className="font-bold text-inherit uppercase">monkey</p>
-      </NavbarBrand>
+    <Navbar onMenuOpenChange={setIsMenuOpen}>
+      <NavbarContent justify="start">
+        <NavbarMenuToggle
+          aria-label={isMenuOpen ? "Close Menu" : "Open Menu"}
+          className="sm:hidden"
+        />
 
-      <NavbarContent justify="center">
+        <NavbarBrand>
+          <p className="font-bold text-inherit uppercase">monkey</p>
+        </NavbarBrand>
+      </NavbarContent>
+
+      <NavbarContent justify="center" className="hidden sm:flex">
         <NavbarItem>
-          <ButtonLink href="/profiles">Profiles</ButtonLink>
+          <NavigationLink href="/profiles">Profiles</NavigationLink>
         </NavbarItem>
+
         <NavbarItem>
-          <ButtonLink href="/categories">Categories</ButtonLink>
+          <NavigationLink href="/categories">Categories</NavigationLink>
         </NavbarItem>
+
         <NavbarItem>
-          <ButtonLink href="/transactions">Transactions</ButtonLink>
+          <NavigationLink href="/transactions">Transactions</NavigationLink>
         </NavbarItem>
       </NavbarContent>
 
@@ -67,6 +78,20 @@ export function NavigationBar() {
           <ThemeSwitcher />
         </NavbarItem>
       </NavbarContent>
+
+      <NavbarMenu>
+        <NavbarMenuItem>
+          <NavigationLink href="/profiles">Profiles</NavigationLink>
+        </NavbarMenuItem>
+
+        <NavbarMenuItem>
+          <NavigationLink href="/categories">Categories</NavigationLink>
+        </NavbarMenuItem>
+
+        <NavbarMenuItem>
+          <NavigationLink href="/transactions">Transactions</NavigationLink>
+        </NavbarMenuItem>
+      </NavbarMenu>
     </Navbar>
   );
 }
