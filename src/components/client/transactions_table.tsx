@@ -685,7 +685,7 @@ export function TransactionsTable(props: {
               <>
                 Total {props.transactions.length} transaction
                 {props.transactions.length > 1 && "s"}.
-                {filterValue && (
+                {(filterValue || dateRangeValue) && (
                   <>
                     {filteredTransactions.length > 0 ? (
                       <>
