@@ -406,6 +406,8 @@ export function ProfilesTable(props: { profiles: ProfileObject[] }) {
   return (
     <>
       <Table
+        isCompact
+        isHeaderSticky
         aria-label="Profiles Table"
         sortDescriptor={sortDescriptor}
         topContent={topContent}

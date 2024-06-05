@@ -377,6 +377,8 @@ export function CategoriesTable(props: {
   return (
     <>
       <Table
+        isCompact
+        isHeaderSticky
         aria-label="Categories Table"
         sortDescriptor={sortDescriptor}
         topContent={topContent}

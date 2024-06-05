@@ -18,6 +18,8 @@ import {
 import {
   Button,
   DatePicker,
+  DateRangePicker,
+  DateValue,
   Dropdown,
   DropdownItem,
   DropdownMenu,
@@ -28,6 +30,7 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
+  RangeValue,
   SortDescriptor,
   Table,
   TableBody,
@@ -41,7 +44,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { FaPlus, FaSearch } from "react-icons/fa";
-import { FaEllipsisVertical, FaPencil, FaTrash } from "react-icons/fa6";
+import { FaEllipsisVertical, FaPencil, FaTrash, FaX } from "react-icons/fa6";
 
 function AddFormContent(props: {
   state: ActionState;
@@ -541,6 +544,8 @@ export function TransactionsTable(props: {
     column: "date",
     direction: "ascending",
   });
+  const [dateRangeValue, setDateRangeValue] =
+    useState<RangeValue<DateValue> | null>(null);
 
   const modal = {
     add: useDisclosure(),
@@ -550,10 +555,11 @@ export function TransactionsTable(props: {
 
   const filteredTransactions = useMemo(() => {
     let filteredTransactions = [...props.transactions];
-    if (filterValue) {
-      const filterValueLowerCase = filterValue.toLowerCase();
-      filteredTransactions = filteredTransactions.filter(
-        (transaction) =>
+
+    filteredTransactions = filteredTransactions.filter((transaction) => {
+      if (filterValue) {
+        const filterValueLowerCase = filterValue.toLowerCase();
+        if (
           transaction.description
             .toLowerCase()
             .includes(filterValueLowerCase) ||
@@ -571,11 +577,32 @@ export function TransactionsTable(props: {
             .includes(filterValueLowerCase) ||
           (transaction.profile as ProfileObject).description
             .toLowerCase()
-            .includes(filterValueLowerCase),
-      );
-    }
+            .includes(filterValueLowerCase)
+        ) {
+          return true;
+        }
+      }
+
+      if (dateRangeValue) {
+        const localTimeZone = getLocalTimeZone();
+        const transactionDate = parseZonedDateTime(transaction.date).toDate();
+        const transactionDateStart = dateRangeValue.start.toDate(localTimeZone);
+        const transactionDateEnd = dateRangeValue.end.toDate(localTimeZone);
+        transactionDateEnd.setDate(transactionDateEnd.getDate() + 1);
+        if (
+          transactionDate >= transactionDateStart &&
+          transactionDate <= transactionDateEnd
+        ) {
+          return true;
+        }
+      } else {
+        return true;
+      }
+
+      return false;
+    });
     return filteredTransactions;
-  }, [props.transactions, filterValue]);
+  }, [props.transactions, filterValue, dateRangeValue]);
 
   const sortedTransactions = useMemo(() => {
     return [...filteredTransactions].sort((a, b) => {
@@ -613,7 +640,7 @@ export function TransactionsTable(props: {
   const topContent = useMemo(() => {
     return (
       <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
+        <div className="flex justify-between gap-3 items-end flex-wrap">
           <Input
             isClearable
             className="w-full sm:max-w-[44%]"
@@ -623,6 +650,24 @@ export function TransactionsTable(props: {
             onClear={() => setFilterValue("")}
             onValueChange={setFilterValue}
           />
+
+          <div className="flex-grow flex justify-end">
+            <DateRangePicker
+              aria-label="Transactions Date Range"
+              className="max-w-fit"
+              value={dateRangeValue}
+              onChange={setDateRangeValue}
+            />
+            <Button
+              isIconOnly
+              radius="full"
+              variant="light"
+              className={dateRangeValue ? "" : "hidden"}
+              endContent={<FaX className="text-xs" />}
+              onPress={() => setDateRangeValue(null)}
+            />
+          </div>
+
           <div className="flex gap-3">
             <Button
               color="primary"
@@ -665,12 +710,16 @@ export function TransactionsTable(props: {
     props.transactions.length,
     filterValue,
     setFilterValue,
+    dateRangeValue,
+    setDateRangeValue,
     filteredTransactions.length,
   ]);
 
   return (
     <>
       <Table
+        isCompact
+        isHeaderSticky
         aria-label="Transactions Table"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
