@@ -18,10 +18,7 @@ export async function middleware(request: HttpRequest) {
   if (session) {
     const user = await getUserSession(session);
     if (user) {
-      if (
-        request.nextUrl.pathname.startsWith("/auth/login") ||
-        request.nextUrl.pathname.startsWith("/auth/register")
-      ) {
+      if (request.nextUrl.pathname.startsWith("/auth")) {
         return HttpResponse.redirect(new URL("/profiles", request.url));
       }
       const response = HttpResponse.next();
@@ -30,7 +27,7 @@ export async function middleware(request: HttpRequest) {
     }
   }
   let response: NextResponse<unknown>;
-  if (request.nextUrl.pathname.startsWith("/auth/login")) {
+  if (request.nextUrl.pathname.startsWith("/auth")) {
     response = HttpResponse.next();
   } else {
     response = HttpResponse.redirect(new URL("/auth/login", request.url));
